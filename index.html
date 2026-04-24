@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sanuj S | Cybersecurity Professional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================
+       CSS VARIABLES & RESET
+    ============================================ */
+    :root {
+      --bg-primary: #030a03;
+      --bg-secondary: #060f06;
+      --bg-card: #0a150a;
+      --bg-card-hover: #0d1f0d;
+      --neon-green: #00ff41;
+      --neon-green-dim: #00c931;
+      --neon-blue: #00d4ff;
+      --neon-yellow: #ffd700;
+      --text-primary: #e0ffe0;
+      --text-secondary: #7aff7a;
+      --text-muted: #3d7a3d;
+      --border-color: #0d3d0d;
+      --border-glow: rgba(0, 255, 65, 0.3);
+      --scanline-color: rgba(0, 255, 65, 0.03);
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-display: 'Orbitron', monospace;
+      --font-body: 'Rajdhani', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      /* CRT scanline overlay */
+      background-image: repeating-linear-gradient(
+        0deg,
+        var(--scanline-color) 0px,
+        var(--scanline-color) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+    }
+
+    /* ============================================
+       SCROLLBAR
+    ============================================ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--neon-green-dim); border-radius: 3px; }
+
+    /* ============================================
+       NOISE TEXTURE OVERLAY
+    ============================================ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity: 0.4;
+    }
+
+    /* ============================================
+       MATRIX RAIN CANVAS
+    ============================================ */
+    #matrix-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.04;
+      pointer-events: none;
+    }
+
+    /* ============================================
+       LAYOUT UTILITIES
+    ============================================ */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    section { padding: 90px 0; }
+
+    /* Section headers */
+    .section-header {
+      margin-bottom: 56px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--border-color), transparent);
+    }
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--neon-green);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-bottom: 4px;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(22px, 4vw, 32px);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 2px;
+      line-height: 1.1;
+    }
+    .section-title span { color: var(--neon-green); }
+
+    /* Card base */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      padding: 28px;
+      transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--neon-green);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .card:hover {
+      border-color: var(--border-glow);
+      box-shadow: 0 0 20px rgba(0,255,65,0.07), inset 0 0 20px rgba(0,255,65,0.02);
+      background: var(--bg-card-hover);
+    }
+    .card:hover::before { opacity: 1; }
+
+    /* Neon text utilities */
+    .neon { color: var(--neon-green); }
+    .neon-blue { color: var(--neon-blue); }
+    .mono { font-family: var(--font-mono); }
+
+    /* ============================================
+       NAVBAR
+    ============================================ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      background: rgba(3, 10, 3, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 14px 0;
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--neon-green);
+      letter-spacing: 3px;
+      text-shadow: 0 0 12px rgba(0,255,65,0.5);
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: color 0.2s, text-shadow 0.2s;
+    }
+    .nav-links a:hover {
+      color: var(--neon-green);
+      text-shadow: 0 0 8px rgba(0,255,65,0.6);
+    }
+    .btn-resume {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 18px;
+      background: transparent;
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+      display: inline-block;
+    }
+    .btn-resume:hover {
+      background: rgba(0,255,65,0.1);
+      box-shadow: 0 0 16px rgba(0,255,65,0.3);
+    }
+    /* Hamburger */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--neon-green);
+      transition: all 0.3s;
+    }
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 56px; left: 0; right: 0;
+      background: rgba(3,10,3,0.97);
+      border-bottom: 1px solid var(--border-color);
+      padding: 20px 24px;
+      z-index: 999;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+      transition: color 0.2s;
+    }
+    .mobile-menu a:hover { color: var(--neon-green); }
+
+    /* ============================================
+       HERO SECTION
+    ============================================ */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      width: 100%;
+    }
+    .hero-tag {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--neon-green);
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+      opacity: 0.8;
+    }
+    .hero-name {
+      font-family: var(--font-display);
+      font-size: clamp(44px, 7vw, 80px);
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: -1px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    .hero-name .last { color: var(--neon-green); text-shadow: 0 0 20px rgba(0,255,65,0.4); }
+    .hero-title {
+      font-family: var(--font-body);
+      font-size: clamp(16px, 2.5vw, 22px);
+      font-weight: 300;
+      color: var(--text-secondary);
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-certs {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .cert-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 2px;
+      padding: 6px 14px;
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      background: rgba(0,255,65,0.05);
+      position: relative;
+      clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    }
+    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn-primary {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 12px 28px;
+      background: var(--neon-green);
+      color: var(--bg-primary);
+      font-weight: 700;
+      text-decoration: none;
+      transition: box-shadow 0.3s, transform 0.2s;
+      display: inline-block;
+      clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 24px rgba(0,255,65,0.5);
+      transform: translateY(-2px);
+    }
+    .btn-outline {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 12px 28px;
+      border: 1px solid var(--text-muted);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: border-color 0.3s, color 0.3s;
+      display: inline-block;
+    }
+    .btn-outline:hover { border-color: var(--neon-green); color: var(--neon-green); }
+
+    /* Hero right — terminal window */
+    .terminal-window {
+      background: #020802;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(0,255,65,0.08);
+    }
+    .terminal-bar {
+      background: #0a150a;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .t-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+    .t-dot.red { background: #ff5f56; }
+    .t-dot.yellow { background: #ffbd2e; }
+    .t-dot.green { background: #27c93f; }
+    .t-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-left: 8px;
+      letter-spacing: 1px;
+    }
+    .terminal-body {
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.8;
+      color: #4af74a;
+      min-height: 280px;
+    }
+    .terminal-line { display: block; }
+    .t-prompt { color: var(--neon-green); }
+    .t-cmd { color: var(--text-primary); }
+    .t-comment { color: var(--text-muted); }
+    .t-value { color: var(--neon-blue); }
+    .t-string { color: #ffcc00; }
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--neon-green);
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ============================================
+       ABOUT SECTION
+    ============================================ */
+    #about { background: var(--bg-secondary); }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .about-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .stat-item {
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+    .stat-item:hover { border-color: var(--border-glow); }
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--neon-green);
+      text-shadow: 0 0 12px rgba(0,255,65,0.4);
+      line-height: 1;
+    }
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+    .about-text p {
+      font-size: 17px;
+      color: var(--text-primary);
+      opacity: 0.85;
+      margin-bottom: 16px;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+    .lang-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+    .lang-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 2px;
+      padding: 5px 14px;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    /* ============================================
+       SKILLS SECTION
+    ============================================ */
+    #skills { background: var(--bg-primary); }
+    .skills-col-header {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .skills-col-header .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .offensive .dot { background: #ff4444; box-shadow: 0 0 6px rgba(255,68,68,0.6); }
+    .defensive .dot { background: var(--neon-blue); box-shadow: 0 0 6px rgba(0,212,255,0.6); }
+    .offensive { color: #ff6666; }
+    .defensive { color: var(--neon-blue); }
+    .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .skill-tools { display: flex; flex-direction: column; gap: 14px; }
+    .skill-tool {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-left: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    .skill-tool:hover {
+      border-left-color: var(--neon-green);
+      background: var(--bg-card);
+      transform: translateX(4px);
+    }
+    .skill-tool.defensive:hover { border-left-color: var(--neon-blue); }
+    .tool-icon {
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-color);
+      font-size: 14px;
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+      color: var(--neon-green);
+      font-weight: bold;
+    }
+    .tool-icon.def { color: var(--neon-blue); border-color: rgba(0,212,255,0.2); }
+    .tool-name {
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 1px;
+    }
+    .tool-cat {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    /* ============================================
+       EXPERIENCE TIMELINE
+    ============================================ */
+    #experience { background: var(--bg-secondary); }
+    .timeline { position: relative; padding-left: 40px; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--neon-green), transparent);
+    }
+    .timeline-item { position: relative; margin-bottom: 48px; }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-dot {
+      position: absolute;
+      left: -36px;
+      top: 4px;
+      width: 14px; height: 14px;
+      border: 2px solid var(--neon-green);
+      background: var(--bg-primary);
+      box-shadow: 0 0 10px rgba(0,255,65,0.4);
+    }
+    .timeline-date {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--neon-green);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .timeline-company {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    .timeline-role {
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--neon-green);
+      margin-bottom: 14px;
+      letter-spacing: 1px;
+    }
+    .timeline-desc {
+      font-size: 15px;
+      color: var(--text-primary);
+      opacity: 0.75;
+      margin-bottom: 12px;
+      font-weight: 300;
+    }
+    .tag-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      background: rgba(0,255,65,0.05);
+      border: 1px solid rgba(0,255,65,0.2);
+      color: var(--neon-green);
+    }
+    .tag.blue {
+      background: rgba(0,212,255,0.05);
+      border-color: rgba(0,212,255,0.2);
+      color: var(--neon-blue);
+    }
+    .highlight-stat {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--neon-green);
+      text-shadow: 0 0 10px rgba(0,255,65,0.4);
+    }
+
+    /* ============================================
+       PROJECTS SECTION
+    ============================================ */
+    #projects { background: var(--bg-primary); }
+    .projects-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .project-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      padding: 32px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .project-card::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 60px; height: 60px;
+      border-top: 2px solid var(--neon-green);
+      border-right: 2px solid var(--neon-green);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .project-card:hover::after { opacity: 0.6; }
+    .project-card:hover {
+      border-color: var(--border-glow);
+      box-shadow: 0 8px 40px rgba(0,255,65,0.06);
+    }
+    .project-num {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 900;
+      color: rgba(0,255,65,0.07);
+      position: absolute;
+      top: 16px; right: 20px;
+      line-height: 1;
+    }
+    .project-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--neon-green);
+      margin-bottom: 12px;
+    }
+    .project-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+      line-height: 1.3;
+    }
+    .project-desc {
+      font-size: 15px;
+      color: var(--text-primary);
+      opacity: 0.7;
+      margin-bottom: 20px;
+      font-weight: 300;
+      line-height: 1.7;
+    }
+    .project-stat {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--neon-green);
+      text-shadow: 0 0 10px rgba(0,255,65,0.3);
+    }
+    .project-stat-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+    }
+
+    /* ============================================
+       CERTIFICATIONS
+    ============================================ */
+    #certifications { background: var(--bg-secondary); }
+    .certs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .cert-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 24px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .cert-card:hover {
+      border-color: var(--border-glow);
+      background: var(--bg-card-hover);
+    }
+    .cert-icon {
+      width: 42px; height: 42px;
+      border: 1px solid var(--neon-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--neon-green);
+      flex-shrink: 0;
+      text-align: center;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+    .cert-name {
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .cert-issuer {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+    .cert-verified {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--neon-green);
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .cert-verified::before { content: '✓'; }
+
+    /* ============================================
+       CONTACT SECTION
+    ============================================ */
+    #contact { background: var(--bg-primary); }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .contact-intro {
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--text-primary);
+      opacity: 0.8;
+      line-height: 1.8;
+      margin-bottom: 32px;
+    }
+    .contact-links { display: flex; flex-direction: column; gap: 16px; }
+    .contact-link {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+      transition: all 0.3s;
+      group: '';
+    }
+    .contact-link:hover {
+      border-color: var(--border-glow);
+      background: rgba(0,255,65,0.03);
+      transform: translateX(4px);
+    }
+    .contact-link-icon {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--neon-green);
+      width: 80px;
+      flex-shrink: 0;
+      letter-spacing: 1px;
+    }
+    .contact-link-val {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+    /* Contact right — terminal style */
+    .contact-terminal {
+      background: #020802;
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+    }
+    .contact-terminal .terminal-body { min-height: 200px; }
+    .glitch-text {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 900;
+      color: var(--neon-green);
+      letter-spacing: 4px;
+      text-shadow:
+        0 0 10px rgba(0,255,65,0.6),
+        0 0 30px rgba(0,255,65,0.3),
+        0 0 60px rgba(0,255,65,0.1);
+      margin-bottom: 8px;
+    }
+    .contact-subtext {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 3px;
+      margin-bottom: 32px;
+    }
+
+    /* ============================================
+       FOOTER
+    ============================================ */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 28px 0;
+      background: var(--bg-primary);
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-text {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+    }
+    .footer-text span { color: var(--neon-green); }
+
+    /* ============================================
+       ANIMATIONS
+    ============================================ */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeInUp 0.8s ease forwards; opacity: 0; }
+    .delay-1 { animation-delay: 0.2s; }
+    .delay-2 { animation-delay: 0.4s; }
+    .delay-3 { animation-delay: 0.6s; }
+    .delay-4 { animation-delay: 0.8s; }
+    .delay-5 { animation-delay: 1.0s; }
+
+    @keyframes scanDown {
+      from { top: -4px; }
+      to   { top: 100%; }
+    }
+    .scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(to bottom, transparent, rgba(0,255,65,0.15), transparent);
+      animation: scanDown 4s linear infinite;
+      pointer-events: none;
+    }
+
+    /* ============================================
+       RESPONSIVE — TABLET
+    ============================================ */
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+      .about-grid { grid-template-columns: 1fr; }
+      .about-stats { flex-direction: row; flex-wrap: wrap; }
+      .stat-item { flex: 1; min-width: 120px; }
+      .skills-grid { grid-template-columns: 1fr; }
+      .projects-grid { grid-template-columns: 1fr; }
+      .certs-grid { grid-template-columns: 1fr; }
+      .contact-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+    }
+    @media (max-width: 560px) {
+      section { padding: 64px 0; }
+      .hero-name { font-size: 40px; }
+      .footer-inner { flex-direction: column; gap: 12px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Matrix rain canvas (background effect) -->
+<canvas id="matrix-canvas"></canvas>
+
+<!-- ============================================
+     NAVIGATION
+============================================ -->
+<nav>
+  <div class="container nav-inner">
+    <!-- Logo -->
+    <a href="#hero" class="nav-logo">SANUJ S</a>
+
+    <!-- Desktop links -->
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#certifications">Certs</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="Resume/Sanuj-s resume.pdf" class="btn-resume" onclick="alert('Resume download would trigger here.')">⬇ Resume</a></li>
+    </ul>
+
+    <!-- Hamburger (mobile) -->
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile menu -->
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#about" onclick="closeMobileMenu()">About</a>
+  <a href="#skills" onclick="closeMobileMenu()">Skills</a>
+  <a href="#experience" onclick="closeMobileMenu()">Experience</a>
+  <a href="#projects" onclick="closeMobileMenu()">Projects</a>
+  <a href="#certifications" onclick="closeMobileMenu()">Certifications</a>
+  <a href="#contact" onclick="closeMobileMenu()">Contact</a>
+  <a href="#" class="btn-resume" style="margin-top:8px; text-align:center;" onclick="alert('Resume download would trigger here.')">⬇ Download Resume</a>
+</div>
+
+<!-- ============================================
+     HERO
+============================================ -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-grid">
+
+      <!-- LEFT: Text -->
+      <div>
+        <div class="hero-tag fade-in">&gt; CYBERSECURITY_PROFESSIONAL.exe</div>
+        <h1 class="hero-name fade-in delay-1">
+          SANUJ<br>
+          <span class="last">S.</span>
+        </h1>
+        <div class="hero-title fade-in delay-2">Ethical Hacker &amp; Security Analyst</div>
+
+        <!-- Certification badges -->
+        <div class="hero-certs fade-in delay-3">
+          <span class="cert-badge">CEH v13</span>
+          <span class="cert-badge">CSA</span>
+          <span class="cert-badge" style="border-color: var(--neon-blue); color: var(--neon-blue); background: rgba(0,212,255,0.05);">FRESHER</span>
+        </div>
+
+        <!-- CTA buttons -->
+        <div class="hero-actions fade-in delay-4">
+          <a href="#contact" class="btn-primary">Initialize Contact</a>
+          <a href="#projects" class="btn-outline">View Projects</a>
+        </div>
+      </div>
+
+      <!-- RIGHT: Terminal window -->
+      <div class="fade-in delay-3" style="position:relative;">
+        <div class="terminal-window">
+          <div class="terminal-bar">
+            <span class="t-dot red"></span>
+            <span class="t-dot yellow"></span>
+            <span class="t-dot green"></span>
+            <span class="t-title">terminal — bash — 80x24</span>
+          </div>
+          <div class="terminal-body">
+            <span class="terminal-line"><span class="t-prompt">root@kali:~$ </span><span class="t-cmd">whoami</span></span>
+            <span class="terminal-line" style="color: var(--neon-green);">Sanuj S — Cybersecurity Professional</span>
+            <span class="terminal-line">&nbsp;</span>
+            <span class="terminal-line"><span class="t-prompt">root@kali:~$ </span><span class="t-cmd">cat profile.json</span></span>
+            <span class="terminal-line"><span style="color:#666;">{</span></span>
+            <span class="terminal-line">&nbsp; <span class="t-string">"role"</span>: <span class="t-value">"Security Analyst"</span>,</span>
+            <span class="terminal-line">&nbsp; <span class="t-string">"focus"</span>: <span class="t-value">"PenTest &amp; Monitoring"</span>,</span>
+            <span class="terminal-line">&nbsp; <span class="t-string">"certifications"</span>: <span class="t-value">["CEH v13", "CSA"]</span>,</span>
+            <span class="terminal-line">&nbsp; <span class="t-string">"status"</span>: <span style="color:#00ff41;">"actively_hunting"</span></span>
+            <span class="terminal-line"><span style="color:#666;">}</span></span>
+            <span class="terminal-line">&nbsp;</span>
+            <span class="terminal-line"><span class="t-prompt">root@kali:~$ </span><span class="cursor"></span></span>
+          </div>
+        </div>
+        <!-- Decorative scan line on terminal -->
+        <div class="scan-line"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     ABOUT
+============================================ -->
+<section id="about">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">// 01</div>
+        <h2 class="section-title">ABOUT <span>ME</span></h2>
+      </div>
+    </div>
+
+    <div class="about-grid">
+      <!-- Stats column -->
+      <div class="about-stats">
+        <div class="stat-item">
+          <div class="stat-num">15+</div>
+          <div class="stat-label">ENVIRONMENTS TESTED</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">30%</div>
+          <div class="stat-label">RISK REDUCTION</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">92%</div>
+          <div class="stat-label">MODEL ACCURACY</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="font-size:20px; padding-top:4px;">CEH+CSA</div>
+          <div class="stat-label">CERTIFICATIONS</div>
+        </div>
+      </div>
+
+      <!-- About text -->
+      <div class="about-text">
+        <p>
+          I am a <strong style="color: var(--neon-green);">Cybersecurity Fresher</strong> with hands-on experience in security monitoring and penetration testing. I thrive at the intersection of offensive and defensive security — discovering vulnerabilities before adversaries do, and building robust defenses to counter threats.
+        </p>
+        <p>
+          My journey spans network monitoring at an AI analytics firm to performing penetration tests across 15+ environments, always with a mission to reduce risk and strengthen security posture. I hold the globally recognized <strong style="color: var(--neon-green);">Certified Ethical Hacker (CEH v13)</strong> and <strong style="color: var(--neon-green);">Certified SOC Analyst (CSA)</strong> credentials.
+        </p>
+        <p>
+          Outside of technical work, I am passionate about staying ahead of the threat landscape — whether through CTF challenges, security research, or exploring the intersection of AI and cybersecurity.
+        </p>
+
+        <!-- Languages -->
+        <div style="margin-top: 24px;">
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); letter-spacing: 3px; margin-bottom: 12px;">LANGUAGES</div>
+          <div class="lang-row">
+            <span class="lang-tag">ENGLISH</span>
+            <span class="lang-tag">MALAYALAM</span>
+            <span class="lang-tag">TAMIL</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     SKILLS
+============================================ -->
+<section id="skills">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">// 02</div>
+        <h2 class="section-title">SKILLS <span>DASHBOARD</span></h2>
+      </div>
+    </div>
+
+    <div class="skills-grid">
+      <!-- OFFENSIVE TOOLS -->
+      <div>
+        <div class="skills-col-header offensive">
+          <span class="dot"></span> OFFENSIVE TOOLKIT
+        </div>
+        <div class="skill-tools">
+          <div class="skill-tool">
+            <div class="tool-icon">NM</div>
+            <div>
+              <div class="tool-name">Nmap</div>
+              <div class="tool-cat">NETWORK SCANNER</div>
+            </div>
+          </div>
+          <div class="skill-tool">
+            <div class="tool-icon">NS</div>
+            <div>
+              <div class="tool-name">Nessus</div>
+              <div class="tool-cat">VULNERABILITY SCANNER</div>
+            </div>
+          </div>
+          <div class="skill-tool">
+            <div class="tool-icon">MS</div>
+            <div>
+              <div class="tool-name">Metasploit</div>
+              <div class="tool-cat">EXPLOITATION FRAMEWORK</div>
+            </div>
+          </div>
+          <div class="skill-tool">
+            <div class="tool-icon">BS</div>
+            <div>
+              <div class="tool-name">Burp Suite</div>
+              <div class="tool-cat">WEB APP TESTING</div>
+            </div>
+          </div>
+          <div class="skill-tool">
+            <div class="tool-icon">OZ</div>
+            <div>
+              <div class="tool-name">OWASP ZAP</div>
+              <div class="tool-cat">WEB SECURITY SCANNER</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEFENSIVE TOOLS -->
+      <div>
+        <div class="skills-col-header defensive">
+          <span class="dot"></span> DEFENSIVE TOOLKIT
+        </div>
+        <div class="skill-tools">
+          <div class="skill-tool defensive">
+            <div class="tool-icon def">WS</div>
+            <div>
+              <div class="tool-name">Wireshark</div>
+              <div class="tool-cat">PACKET ANALYZER</div>
+            </div>
+          </div>
+          <div class="skill-tool defensive">
+            <div class="tool-icon def">SN</div>
+            <div>
+              <div class="tool-name">Snort</div>
+              <div class="tool-cat">INTRUSION DETECTION</div>
+            </div>
+          </div>
+          <div class="skill-tool defensive">
+            <div class="tool-icon def">SX</div>
+            <div>
+              <div class="tool-name">Sophos XDR</div>
+              <div class="tool-cat">EXTENDED DETECTION &amp; RESPONSE</div>
+            </div>
+          </div>
+          <div class="skill-tool defensive">
+            <div class="tool-icon def">SP</div>
+            <div>
+              <div class="tool-name">Splunk</div>
+              <div class="tool-cat">SIEM PLATFORM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     EXPERIENCE
+============================================ -->
+<section id="experience">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">// 03</div>
+        <h2 class="section-title">EXPERIENCE <span>TIMELINE</span></h2>
+      </div>
+    </div>
+
+    <div class="timeline">
+
+      <!-- Job 1 — Current -->
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">MAR 2026 — PRESENT &nbsp;•&nbsp; <span style="color: #00ff41; animation: blink 1s step-end infinite; display:inline-block;">● ACTIVE</span></div>
+        <div class="timeline-company">ELECTROAI ANALYTICS MAGNIFIER</div>
+        <div class="timeline-role">Cybersecurity Intern</div>
+        <p class="timeline-desc">
+          Monitoring and analyzing network systems for suspicious behavior and anomalies. Responsible for triaging and investigating security alerts, correlating threat intelligence, and escalating high-priority incidents to the response team. Contributing to hardening of the organization's security posture through continuous monitoring.
+        </p>
+        <div class="tag-row">
+          <span class="tag">NETWORK MONITORING</span>
+          <span class="tag">ALERT ANALYSIS</span>
+          <span class="tag">THREAT INTELLIGENCE</span>
+          <span class="tag">INCIDENT RESPONSE</span>
+        </div>
+      </div>
+
+      <!-- Job 2 -->
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,212,255,0.4);"></div>
+        <div class="timeline-date" style="color: var(--neon-blue);">MAY 2024 — JUN 2024</div>
+        <div class="timeline-company">RINEX.AI</div>
+        <div class="timeline-role" style="color: var(--neon-blue);">Pentester &amp; Ethical Hacker</div>
+        <p class="timeline-desc">
+          Conducted comprehensive penetration tests across multiple client environments, identifying critical vulnerabilities and delivering actionable remediation guidance.
+          Achieved significant measurable security improvements through systematic exploitation and responsible disclosure.
+        </p>
+        <!-- Highlight stat -->
+        <div style="display:flex; gap:32px; margin-bottom: 16px; flex-wrap:wrap;">
+          <div>
+            <div class="highlight-stat">30%</div>
+            <div style="font-family: var(--font-mono); font-size:10px; color: var(--text-muted); letter-spacing:2px;">RISK REDUCTION</div>
+          </div>
+          <div>
+            <div class="highlight-stat" style="color: var(--neon-blue); text-shadow: 0 0 10px rgba(0,212,255,0.4);">15+</div>
+            <div style="font-family: var(--font-mono); font-size:10px; color: var(--text-muted); letter-spacing:2px;">ENVIRONMENTS TESTED</div>
+          </div>
+        </div>
+        <div class="tag-row">
+          <span class="tag blue">PENETRATION TESTING</span>
+          <span class="tag blue">VULNERABILITY ASSESSMENT</span>
+          <span class="tag blue">ETHICAL HACKING</span>
+          <span class="tag blue">RISK REDUCTION</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     PROJECTS
+============================================ -->
+<section id="projects">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">// 04</div>
+        <h2 class="section-title">FEATURED <span>PROJECTS</span></h2>
+      </div>
+    </div>
+
+    <div class="projects-grid">
+
+      <!-- Project 1 -->
+      <div class="project-card">
+        <div class="project-num">01</div>
+        <div class="project-tag">VULNERABILITY ASSESSMENT</div>
+        <h3 class="project-title">Fastly.com — Attack Surface Reconnaissance</h3>
+        <p class="project-desc">
+          Performed an in-depth vulnerability assessment targeting Fastly.com, focusing on DNS enumeration, subdomain mapping, and exposure analysis. Identified misconfigured and exposed subdomains that could serve as entry points for adversaries.
+        </p>
+        <div class="tag-row">
+          <span class="tag">DNS MAPPING</span>
+          <span class="tag">SUBDOMAIN RECON</span>
+          <span class="tag">OSINT</span>
+          <span class="tag">NMAP</span>
+        </div>
+      </div>
+
+      <!-- Project 2 -->
+      <div class="project-card">
+        <div class="project-num">02</div>
+        <div class="project-tag" style="color: var(--neon-blue);">MACHINE LEARNING / AI</div>
+        <h3 class="project-title">GenAI Cattle Disease Prediction System</h3>
+        <p class="project-desc">
+          Built a deep learning pipeline for cattle disease prediction using transfer learning architectures. Leveraged ResNet and EfficientNet models to achieve high diagnostic accuracy, demonstrating the power of AI applied to agricultural health monitoring.
+        </p>
+        <!-- Stat highlight -->
+        <div style="margin-bottom:20px;">
+          <div class="project-stat" style="color: var(--neon-blue); text-shadow: 0 0 10px rgba(0,212,255,0.3);">92%</div>
+          <div class="project-stat-label">PREDICTION ACCURACY</div>
+        </div>
+        <div class="tag-row">
+          <span class="tag blue">RESNET</span>
+          <span class="tag blue">EFFICIENTNET</span>
+          <span class="tag blue">TRANSFER LEARNING</span>
+          <span class="tag blue">PYTHON</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     CERTIFICATIONS
+============================================ -->
+<section id="certifications">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">// 05</div>
+        <h2 class="section-title">CERTIFI<span>CATIONS</span></h2>
+      </div>
+    </div>
+
+    <div class="certs-grid">
+
+      <div class="cert-card">
+        <div class="cert-icon">CEH<br>v13</div>
+        <div>
+          <div class="cert-name">Certified Ethical Hacker v13</div>
+          <div class="cert-issuer">EC-COUNCIL</div>
+          <div class="cert-verified">VERIFIED CREDENTIAL</div>
+        </div>
+      </div>
+
+      <div class="cert-card">
+        <div class="cert-icon" style="border-color: var(--neon-blue); color: var(--neon-blue);">CSA</div>
+        <div>
+          <div class="cert-name">Certified SOC Analyst</div>
+          <div class="cert-issuer">EC-COUNCIL</div>
+          <div class="cert-verified">VERIFIED CREDENTIAL</div>
+        </div>
+      </div>
+
+      <div class="cert-card">
+        <div class="cert-icon" style="border-color: #ffd700; color: #ffd700; font-size: 9px;">CISCO</div>
+        <div>
+          <div class="cert-name">Introduction to Cybersecurity</div>
+          <div class="cert-issuer">CISCO NETWORKING ACADEMY</div>
+          <div class="cert-verified">VERIFIED CREDENTIAL</div>
+        </div>
+      </div>
+
+      <div class="cert-card">
+        <div class="cert-icon" style="border-color: #ff8c42; color: #ff8c42; font-size: 8px;">NPTEL</div>
+        <div>
+          <div class="cert-name">Privacy &amp; Security in Online Social Media</div>
+          <div class="cert-issuer">NPTEL — IIT</div>
+          <div class="cert-verified">VERIFIED CREDENTIAL</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     CONTACT
+============================================ -->
+<section id="contact">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-label">// 06</div>
+        <h2 class="section-title">INITIALIZE <span>CONTACT</span></h2>
+      </div>
+    </div>
+
+    <div class="contact-grid">
+      <!-- Left -->
+      <div>
+        <div class="glitch-text">LET'S CONNECT</div>
+        <div class="contact-subtext">READY FOR MISSION-CRITICAL SECURITY WORK</div>
+        <p class="contact-intro">
+          Currently open to cybersecurity roles — SOC Analyst, Junior Pentester, or Security Engineer positions. Let's talk about how I can help secure your systems.
+        </p>
+        <div class="contact-links">
+          <a href="mailto:sanujsreenu10@gmail.com" class="contact-link">
+            <span class="contact-link-icon">EMAIL</span>
+            <span class="contact-link-val">sanujsreenu10@gmail.com</span>
+          </a>
+          <a href="https://linkedin.com/in/sanuj-s-" target="_blank" rel="noopener" class="contact-link">
+            <span class="contact-link-icon">LINKEDIN</span>
+            <span class="contact-link-val">linkedin.com/in/sanuj-s-</span>
+          </a>
+          <a href="https://github.com/sanuj3326" target="_blank" rel="noopener" class="contact-link">
+            <span class="contact-link-icon">GITHUB</span>
+            <span class="contact-link-val">github.com/sanuj3326</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Right — terminal -->
+      <div>
+        <div class="contact-terminal terminal-window">
+          <div class="terminal-bar">
+            <span class="t-dot red"></span>
+            <span class="t-dot yellow"></span>
+            <span class="t-dot green"></span>
+            <span class="t-title">connect.sh</span>
+          </div>
+          <div class="terminal-body">
+            <span class="terminal-line"><span class="t-prompt">$ </span><span class="t-cmd">./connect --target sanuj</span></span>
+            <span class="terminal-line">&nbsp;</span>
+            <span class="terminal-line" style="color: #4af74a;">[+] Resolving contact channels...</span>
+            <span class="terminal-line" style="color: #4af74a;">[+] Email     : sanujsreenu10@gmail.com</span>
+            <span class="terminal-line" style="color: var(--neon-blue);">[+] LinkedIn  : /in/sanuj-s-</span>
+            <span class="terminal-line" style="color: var(--neon-blue);">[+] GitHub    : sanuj3326</span>
+            <span class="terminal-line">&nbsp;</span>
+            <span class="terminal-line" style="color: #ffd700;">[!] Status    : OPEN TO OPPORTUNITIES</span>
+            <span class="terminal-line">&nbsp;</span>
+            <span class="terminal-line"><span class="t-prompt">$ </span><span class="cursor"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     FOOTER
+============================================ -->
+<footer>
+  <div class="container footer-inner">
+    <div class="footer-text">
+      © 2025 <span>SANUJ S</span> — CYBERSECURITY PROFESSIONAL
+    </div>
+    <div class="footer-text">
+      BUILT WITH <span>01</span>S &amp; <span>00</span>S
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================
+     JAVASCRIPT
+============================================ -->
+<script>
+  /* ----- Matrix Rain Effect ----- */
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()あいうえお';
+  const fontSize = 13;
+  let columns = Math.floor(canvas.width / fontSize);
+  let drops = Array(columns).fill(1);
+
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(3, 10, 3, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = `${fontSize}px Share Tech Mono`;
+
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  setInterval(drawMatrix, 55);
+
+  /* Re-calc columns on resize */
+  window.addEventListener('resize', () => {
+    columns = Math.floor(canvas.width / fontSize);
+    drops = Array(columns).fill(1);
+  });
+
+  /* ----- Mobile Menu Toggle ----- */
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  hamburger.addEventListener('click', () => {
+    mobileMenu.classList.toggle('open');
+  });
+
+  function closeMobileMenu() {
+    mobileMenu.classList.remove('open');
+  }
+
+  /* ----- Scroll-triggered fade-in for sections ----- */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.card, .timeline-item, .project-card, .cert-card, .skill-tool').forEach((el, i) => {
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(20px)';
+          setTimeout(() => {
+            el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+          }, i * 80);
+        });
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('section').forEach(s => observer.observe(s));
+
+  /* ----- Typing animation for hero terminal ----- */
+  // Already rendered as static HTML for performance;
+  // the blinking cursor handles the "live" feel.
+</script>
+
+</body>
+</html>
